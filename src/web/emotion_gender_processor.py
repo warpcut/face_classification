@@ -16,8 +16,7 @@ from utils.inference import load_image
 from utils.preprocessor import preprocess_input
 
 def process_image(image):
-
-    try:
+    if True:
         # parameters for loading data and images
         detection_model_path = './trained_models/detection_models/haarcascade_frontalface_default.xml'
         emotion_model_path = './trained_models/emotion_models/fer2013_mini_XCEPTION.102-0.66.hdf5'
@@ -49,6 +48,9 @@ def process_image(image):
         gray_image = cv2.cvtColor(unchanged_image, cv2.COLOR_BGR2GRAY)
 
         faces = detect_faces(face_detection, gray_image)
+        if len(faces) != 1 :
+            raise Exception('0 or more than one faces not supported')
+        # print('faces: ' + str(len(faces)))
         for face_coordinates in faces:
             x1, x2, y1, y2 = apply_offsets(face_coordinates, gender_offsets)
             rgb_face = rgb_image[y1:y2, x1:x2]
@@ -57,38 +59,36 @@ def process_image(image):
             gray_face = gray_image[y1:y2, x1:x2]
 
             try:
-                rgb_face = cv2.resize(rgb_face, (gender_target_size))
                 gray_face = cv2.resize(gray_face, (emotion_target_size))
             except:
                 continue
 
-            rgb_face = preprocess_input(rgb_face, False)
-            rgb_face = np.expand_dims(rgb_face, 0)
-            gender_prediction = gender_classifier.predict(rgb_face)
-            gender_label_arg = np.argmax(gender_prediction)
-            gender_text = gender_labels[gender_label_arg]
-
             gray_face = preprocess_input(gray_face, True)
             gray_face = np.expand_dims(gray_face, 0)
             gray_face = np.expand_dims(gray_face, -1)
-            emotion_label_arg = np.argmax(emotion_classifier.predict(gray_face))
+            emotion_classifier_results = emotion_classifier.predict(gray_face)
+            emotion_label_arg = np.argmax(emotion_classifier_results)
             emotion_text = emotion_labels[emotion_label_arg]
+            category_probabilities = {}
+            
+            for result in emotion_classifier_results.tolist():
+                for count, category_probability in enumerate(result):
+                    category_probabilities[emotion_labels[count]] = float(category_probability)
 
-            if gender_text == gender_labels[0]:
-                color = (0, 0, 255)
-            else:
-                color = (255, 0, 0)
+            return(emotion_text, category_probabilities)
 
-            draw_bounding_box(face_coordinates, rgb_image, color)
-            draw_text(face_coordinates, rgb_image, gender_text, color, 0, -20, 1, 2)
-            draw_text(face_coordinates, rgb_image, emotion_text, color, 0, -50, 1, 2)
-    except Exception as err:
-        logging.error('Error in emotion gender processor: "{0}"'.format(err))
 
-    bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
 
-    dirname = 'result'
-    if not os.path.exists(dirname):
-        os.mkdir(dirname)
 
-    cv2.imwrite(os.path.join(dirname, 'predicted_image.png'), bgr_image)
+
+
+
+
+
+
+
+
+
+
+
+
