@@ -1,11 +1,11 @@
 import os
 import sys
 import logging
-
+import tensorflow as tf
 import cv2
 from keras.models import load_model
 import numpy as np
-
+import tensorflow as tf
 from utils.datasets import get_labels
 from utils.inference import detect_faces
 from utils.inference import draw_text
@@ -16,7 +16,8 @@ from utils.inference import load_image
 from utils.preprocessor import preprocess_input
 
 def process_image(image):
-    if True:
+    sess  = tf.Session()
+    with sess.as_default():
         # parameters for loading data and images
         detection_model_path = './trained_models/detection_models/haarcascade_frontalface_default.xml'
         emotion_model_path = './trained_models/emotion_models/fer2013_mini_XCEPTION.102-0.66.hdf5'
